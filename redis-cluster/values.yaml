@@ -1,0 +1,103 @@
+## Redis Cluster Configuration (bitnami/redis-cluster v11.4.3)
+global:
+  defaultStorageClass: "gp2"  # Global storage class for all PersistentVolumeClaims (PVCs)
+
+existingSecret: "redis-secret"
+existingSecretPasswordKey: "redis-password"
+
+cluster:
+  enabled: true
+  nodes: 6  # Total nodes (3 masters + 3 replicas)
+  replicas: 1  # Number of replicas per master (1:1 replica/master ratio)
+
+  # Persistence configuration (applies to all nodes)
+  persistence:
+    enabled: true
+    storageClass: "gp2" # Storage class for PVCs
+    size: 8Gi # Disk size per node
+
+  resources:
+    master:
+      requests:
+        memory: 512Mi # Minimum memory guaranteed
+        cpu: 200m # Minimum CPU guaranteed
+      limits:
+        memory: 1Gi  # Maximum allowed memory
+        cpu: 500m  # Maximum allowed CPU
+    replica:  # Configuration for replica nodes
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 200m
+
+metrics:
+  enabled: true # Enable Prometheus metrics exporter
+  serviceMonitor:
+    enabled: true # Create ServiceMonitor for Prometheus Operator
+    namespace: "redis" # Namespace where ServiceMonitor will be deployed
+    labels:
+      app.kubernetes.io/name: redis-cluster
+      app.kubernetes.io/instance: redis-cluster
+
+podDisruptionBudget:
+  enabled: true # Enable PDB to ensure minimum availability during disruptions
+  minAvailable: 1 # At least 1 pod must always be available
+
+securityContext: # Security policies for pods
+  enabled: true
+  fsGroup: 1001
+  runAsUser: 1001
+
+# high availability, resilience and LoadBalancer
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - redis-cluster # Match Redis Cluster pods
+        topologyKey: "kubernetes.io/hostname" # Prevent pods from sharing the same node
+
+# Removes the Kubernetes restriction and allows pods to be scheduled on master nodes, useful in small or test environments.
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists" # Tolerate nodes with this taint
+    effect: "NoSchedule"
+
+service:
+  type: ClusterIP # Internal cluster IP for Redis access
+  port: 6379 # Default Redis port
+
+# Readiness and Liveness Probes
+redis:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0  # Ensures that all pods are upgraded gradually, maintaining high availability and avoiding downtime during the upgrade
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 20
+    timeoutSeconds: 10
+    failureThreshold: 3
+    command: ["sh", "-c", "redis-cli -h 127.0.0.1 -p $REDIS_PORT_NUMBER -a $REDIS_PASSWORD ping | grep PONG"]
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 20
+    timeoutSeconds: 10
+    failureThreshold: 5
+    command: ["sh", "-c", "redis-cli -h 127.0.0.1 -p $REDIS_PORT_NUMBER -a $REDIS_PASSWORD cluster info | grep 'cluster_state:ok'"]
+
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 30
+    command: ["sh", "-c", "redis-cli -h 127.0.0.1 -p $REDIS_PORT_NUMBER -a $REDIS_PASSWORD ping | grep PONG"]
