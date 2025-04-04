@@ -39,7 +39,7 @@ jobs:
     - name: Terraform Plan
       working-directory: ${{ env.BACKEND_DIR }}
       run: |
-        terraform plan -no-color > plan_output.txt
+        terraform plan -no-color -lock=false > plan_output.txt
         echo "PLAN_OUTPUT<<EOF" >> $GITHUB_ENV
         cat plan_output.txt >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
@@ -96,7 +96,7 @@ jobs:
     - name: Terraform Plan
       working-directory: ${{ env.INFRA_DIR }}
       run: |
-        terraform plan -no-color > plan_output.txt
+        terraform plan -no-color -lock=false > plan_output.txt
         echo "INFRA_PLAN_OUTPUT<<EOF" >> $GITHUB_ENV
         cat plan_output.txt >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
