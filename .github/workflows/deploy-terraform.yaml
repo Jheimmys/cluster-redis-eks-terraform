@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: deploy-backend
     timeout-minutes: 60
-    if: ${{ github.event.inputs.action == 'deploy' }}
+    if: ${{ github.event.inputs.action == 'deploy-backend-infra' }}
     env:
       BACKEND_DIR: "./backend-config"
 
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: deploy-infra
-    if: ${{ github.event.inputs.action == 'deploy' }}
+    if: ${{ github.event.inputs.action == 'deploy-backend-infra' }}
     needs: deploy-backend # Waiting backend stay ready
     env:
       INFRA_DIR: "./infrastructure"
