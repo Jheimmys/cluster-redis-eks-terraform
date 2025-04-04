@@ -44,7 +44,7 @@ jobs:
         cat plan_output.txt >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       id: plan
-    
+
     - name: Post Plan to PR
       uses: actions/github-script@v6
       env:
@@ -59,7 +59,7 @@ jobs:
             body: output
           });
 
-  # Infra Plan (runs on PR)
+  # Infra Plan (runs on PR) - Usa bucket temporário para validação
   infra-plan:
     if: github.event_name == 'pull_request'
     needs: backend-plan
@@ -67,6 +67,7 @@ jobs:
     environment: terraform-plan
     env:
       INFRA_DIR: "./infrastructure"
+      TF_STATE_BUCKET: "temp-bucket-for-validation"
 
     steps:
     - name: Checkout Code
@@ -84,20 +85,29 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Terraform Init
+    - name: Terraform Init (Validation Mode)
       working-directory: ${{ env.INFRA_DIR }}
-      run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+      run: |
+        terraform init \
+          -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+          -backend-config="skip_credentials_validation=true" \
+          -backend-config="skip_region_validation=true"
 
     - name: Terraform Plan
       working-directory: ${{ env.INFRA_DIR }}
-      run: terraform plan -no-color
-      id: plan
+      run: |
+        terraform plan -no-color > plan_output.txt
+        echo "INFRA_PLAN_OUTPUT<<EOF" >> $GITHUB_ENV
+        cat plan_output.txt >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Post Plan to PR
       uses: actions/github-script@v6
+      env:
+        PLAN_OUTPUT: ${{ env.INFRA_PLAN_OUTPUT }}
       with:
         script: |
-          const output = `### Terraform Plan (Infra) 📝\n\n\`\`\`\n${steps.plan.outputs.stdout}\n\`\`\``;
+          const output = `### Terraform Plan (Infra) 📝\n\n\`\`\`\n${process.env.PLAN_OUTPUT}\n\`\`\``;
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
@@ -105,9 +115,9 @@ jobs:
             body: output
           });
 
-  # Backend Apply (runs on merge to main)
+  # Backend Apply (runs on merge to master)
   deploy-backend:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: deploy-backend
     env:
@@ -141,9 +151,17 @@ jobs:
       working-directory: ${{ env.BACKEND_DIR }}
       run: echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_ENV
 
-  # Infra Apply (runs on merge to main)
+    - name: Set Output Variable
+      working-directory: ${{ env.BACKEND_DIR }}
+      id: backend_outputs
+      run: echo "bucket_name=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+
+    outputs:
+      bucket_name: ${{ steps.backend_outputs.outputs.bucket_name }}
+
+  # Infra Apply (runs on merge to master) - Usa bucket real criado pelo backend
   deploy-infra:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: deploy-backend
     runs-on: ubuntu-latest
     environment: deploy-infra
@@ -166,7 +184,7 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Terraform Init
+    - name: Terraform Init (with real backend)
       working-directory: ${{ env.INFRA_DIR }}
       run: terraform init -backend-config="bucket=${{ needs.deploy-backend.outputs.bucket_name }}"
 
@@ -179,8 +197,6 @@ jobs:
       run: |
         aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
         kubectl get nodes
-
-  ### -------------------------------- ###
 
   # Destroy Infra Resources
   destroy-infra:
