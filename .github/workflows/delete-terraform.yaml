@@ -1,4 +1,4 @@
-name: Delete Terraform Resources
+name: Terraform - Delete Resources
 
 on:
   workflow_dispatch:

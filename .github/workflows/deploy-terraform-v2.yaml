@@ -1,4 +1,4 @@
-name: Terraform - CI/CD with PR Approval
+name: Terraform - Create Resources
 
 on:
   pull_request:

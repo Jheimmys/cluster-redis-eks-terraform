@@ -1,4 +1,4 @@
-name: Redis Cluster CI/CD
+name: Redis Cluster
 
 on:
   push:
