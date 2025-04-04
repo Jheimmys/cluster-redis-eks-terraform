@@ -1,11 +1,25 @@
 name: Terraform - CI/CD with PR Approval
 
+#on:
+#  pull_request:
+#    branches: [ "master" ]
+#    types: [opened, synchronize, reopened]
+#  push:
+#    branches: [ "master" ]
+#    paths:
+#      - '!.github/workflows/deploy-redis-cluster.yaml'
+
 on:
-  pull_request:
-    branches: [ "master" ]
-    types: [opened, synchronize, reopened]
-  push:
-    branches: [ "master" ]
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        description: "Select action"
+        required: true
+        options:
+          - deploy-backend-infra
+          - destroy-infra
+          - destroy-backend
 
 jobs:
   # Backend Plan (runs on PR)
