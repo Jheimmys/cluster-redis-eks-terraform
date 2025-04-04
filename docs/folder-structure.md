@@ -1,7 +1,9 @@
 CLUSTER-REDIS-TERRAFORM-EKS/
 ├── .github/                            # GitHub Actions configuration
 │   └── workflows/                      # Contains CI/CD workflow files
-│       └── deploy-redis-cluster.yaml   # GitHub Actions workflow for Redis Cluster deployment
+│       ├── deploy-redis-cluster.yaml   # GitHub Actions workflow for Redis Cluster deployment
+│       ├── deploy-terraform-v2.yaml    # GitHub Actions workflow for Create Terraform Resources
+│       └── delete-terraform.yaml       # GitHub Actions workflow for Delete Terraform Resources
 ├── backend_config/                     # Terraform backend configuration
 │   ├── main.tf                         # Defines backend storage (e.g., S3, remote state)
 │   ├── outputs.tf                      # Defines output variables for backend

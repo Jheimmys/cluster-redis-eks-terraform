@@ -3,10 +3,6 @@ name: Redis Cluster CI/CD
 on:
   push:
     branches: [master]
-  pull_request: 
-    branches: [master]
-    paths:
-      - '!.github/workflows/deploy-terraform-v2.yaml'
 
 env:
   HELM_VERSION: "3.17.1"

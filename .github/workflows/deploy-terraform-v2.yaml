@@ -1,25 +1,13 @@
 name: Terraform - CI/CD with PR Approval
 
-#on:
-#  pull_request:
-#    branches: [ "master" ]
-#    types: [opened, synchronize, reopened]
-#  push:
-#    branches: [ "master" ]
-#    paths:
-#      - '!.github/workflows/deploy-redis-cluster.yaml'
-
 on:
-  workflow_dispatch:
-    inputs:
-      action:
-        type: choice
-        description: "Select action"
-        required: true
-        options:
-          - deploy-backend-infra
-          - destroy-infra
-          - destroy-backend
+  pull_request:
+    branches: [ "master" ]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [ "master" ]
+    paths:
+      - '!.github/workflows/deploy-redis-cluster.yaml'
 
 jobs:
   # Backend Plan (runs on PR)
@@ -211,80 +199,3 @@ jobs:
       run: |
         aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
         kubectl get nodes
-
-  # Destroy Infra Resources
-  destroy-infra:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    environment: destroy-infra
-    if: ${{ github.event.inputs.action == 'destroy-infra' }}
-    env:
-      INFRA_DIR: "./infrastructure"
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Terraform Configuration
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.11.0
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-
-    - name: Terraform Init
-      working-directory: ${{ env.INFRA_DIR }}
-      run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
-
-    - name: Terraform Destroy
-      working-directory: ${{ env.INFRA_DIR }}
-      run: terraform destroy -auto-approve
-
-  # Destroy Backend Resources
-  destroy-backend:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    environment: destroy-backend
-    if: ${{ github.event.inputs.action == 'destroy-backend' }}
-    env:
-      BACKEND_DIR: "./backend-config"
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Terraform Configuration
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.11.0
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-
-    - name: Terraform Init
-      working-directory: ${{ env.BACKEND_DIR }}
-      run: terraform init
-
-    - name: Empty S3 Bucket via AWS CLI
-      run: aws s3 rm s3://${{ secrets.TF_STATE_BUCKET }} --recursive
-      
-    - name: Import S3 Bucket
-      working-directory: ${{ env.BACKEND_DIR }}
-      run: terraform import aws_s3_bucket.tf_state ${{ secrets.TF_STATE_BUCKET }}
-
-    - name: Import DynamoDB Table
-      working-directory: ${{ env.BACKEND_DIR }}
-      run: terraform import aws_dynamodb_table.tf_lock ${{ secrets.DYNAMODB_LOCK_TABLE }}
-
-    - name: Terraform Destroy
-      working-directory: ${{ env.BACKEND_DIR }}
-      run: terraform destroy -auto-approve
