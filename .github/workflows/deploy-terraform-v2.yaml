@@ -2,10 +2,10 @@ name: Terraform - CI/CD with PR Approval
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
     types: [opened, synchronize, reopened]
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
   # Backend Plan (runs on PR)
