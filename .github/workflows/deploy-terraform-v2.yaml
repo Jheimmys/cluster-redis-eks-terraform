@@ -67,7 +67,7 @@ jobs:
     environment: terraform-plan
     env:
       INFRA_DIR: "./infrastructure"
-      TF_STATE_BUCKET: "temp-bucket-for-validation"
+      TF_STATE_BUCKET: "temp-bucket-for-validation-jhei"
 
     steps:
     - name: Checkout Code
