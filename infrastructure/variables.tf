@@ -63,7 +63,7 @@ variable "grafana_user" {
 }
 
 variable "grafana_version" {
-  description = "Grafana Version chart"
+  description = "Grafana Version Chart"
   type        = string
   default     = "8.10.3"
 }

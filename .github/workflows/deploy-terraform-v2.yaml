@@ -1,6 +1,11 @@
 name: Terraform - Create Resources
 
 on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'backend-config/**'
+      - 'infrastructure/**'
   pull_request:
     branches: [ "master" ]
     paths:
