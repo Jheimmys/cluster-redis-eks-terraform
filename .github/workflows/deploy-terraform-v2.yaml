@@ -67,7 +67,7 @@ jobs:
         PLAN_OUTPUT: ${{ env.PLAN_OUTPUT }}
       with:
         script: |
-          const output = `### Terraform Plan (Backend) 📝\n\n\`\`\`\n${process.env.PLAN_OUTPUT}\n\`\`\``;
+          const output = `### Terraform Plan (Backend) \n\n\`\`\`\n${process.env.PLAN_OUTPUT}\n\`\`\``;
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
@@ -123,7 +123,7 @@ jobs:
         PLAN_OUTPUT: ${{ env.INFRA_PLAN_OUTPUT }}
       with:
         script: |
-          const output = `### Terraform Plan (Infra) 📝\n\n\`\`\`\n${process.env.PLAN_OUTPUT}\n\`\`\``;
+          const output = `### Terraform Plan (Infra) \n\n\`\`\`\n${process.env.PLAN_OUTPUT}\n\`\`\``;
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
