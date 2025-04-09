@@ -70,7 +70,7 @@ variable "grafana_version" {
 
 #Prometheus
 variable "prometheus_version" {
-  description = "Prometheus version chart"
+  description = "Prometheus Version Chart"
   type        = string
   default     = "69.7.2"
 }
