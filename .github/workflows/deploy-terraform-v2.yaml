@@ -12,8 +12,9 @@ jobs:
   check-commit:
     runs-on: ubuntu-latest
     if: |
-      contains(github.event.head_commit.message, '#terraform') &&
-      github.event_name == 'pull_request'
+      github.event_name == 'pull_request' &&
+      (contains(github.event.pull_request.title, '#terraform') ||
+       contains(github.event.pull_request.body, '#terraform'))
     steps:
       - run: echo "Commit válido para execução do Terraform workflow."
 
