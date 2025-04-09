@@ -128,7 +128,7 @@ jobs:
 
   # Backend Apply (runs on merge to master)
   deploy-backend:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'pull_request' && github.ref == 'refs/heads/master'
     needs: [check-commit, backend-plan]
     runs-on: ubuntu-latest
     environment: deploy-backend
@@ -173,7 +173,7 @@ jobs:
 
   # Infra Apply (runs on merge to master) - Usa bucket real criado pelo backend
   deploy-infra:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'pull_request' && github.ref == 'refs/heads/master'
     needs: [check-commit, deploy-backend]
     runs-on: ubuntu-latest
     environment: deploy-infra
