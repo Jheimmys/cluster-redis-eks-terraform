@@ -1,20 +1,18 @@
 name: Terraform - Create Resources
 
 on:
-  push:
+  pull_request:
     branches: [ "master" ]
     paths:
       - 'backend-config/**'
-      - 'infrastructure/**'
-  pull_request:
-    branches: [ "master" ]
+      - 'infrastructure/**'    
     types: [opened, synchronize, reopened]
 
 jobs:
   check-commit:
     runs-on: ubuntu-latest
     if: |
-      contains(github.event.head_commit.message, '#terraform') ||
+      contains(github.event.head_commit.message, '#terraform') &&
       github.event_name == 'pull_request'
     steps:
       - run: echo "Commit válido para execução do Terraform workflow."
@@ -130,7 +128,7 @@ jobs:
   # Backend Apply (runs on merge to master)
   deploy-backend:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: check-commit
+    needs: [check-commit, backend-plan]
     runs-on: ubuntu-latest
     environment: deploy-backend
     env:

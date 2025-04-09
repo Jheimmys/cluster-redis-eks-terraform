@@ -34,7 +34,7 @@ variable "redis_password" {
 }
 
 variable "grafana_password" {
-  description = "Grafana secret"
+  description = "Grafana Secret"
   type        = string
 }
 
