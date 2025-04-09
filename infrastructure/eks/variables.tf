@@ -29,7 +29,7 @@ variable "aws_region" {
 }
 
 variable "redis_password" {
-  description = "Cluster redis secret"
+  description = "Cluster Redis Secret"
   type        = string
 }
 
