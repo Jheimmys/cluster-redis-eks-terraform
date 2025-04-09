@@ -1,18 +1,28 @@
 name: Terraform - Create Resources
 
 on:
-  pull_request:
-    branches: [ "master" ]
-    types: [opened, synchronize, reopened]
   push:
     branches: [ "master" ]
     paths:
-      - '!.github/workflows/deploy-redis-cluster.yaml'
+      - 'backend-config/**'
+      - 'infrastructure/**'
+  pull_request:
+    branches: [ "master" ]
+    types: [opened, synchronize, reopened]
 
 jobs:
+  check-commit:
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.head_commit.message, '#terraform') ||
+      github.event_name == 'pull_request'
+    steps:
+      - run: echo "Commit válido para execução do Terraform workflow."
+
   # Backend Plan (runs on PR)
   backend-plan:
     if: github.event_name == 'pull_request'
+    needs: check-commit
     runs-on: ubuntu-latest
     environment: terraform-plan
     env:
@@ -64,7 +74,7 @@ jobs:
   # Infra Plan (runs on PR) - Usa bucket temporário para validação
   infra-plan:
     if: github.event_name == 'pull_request'
-    needs: backend-plan
+    needs: [check-commit, backend-plan]
     runs-on: ubuntu-latest
     environment: terraform-plan
     env:
@@ -120,6 +130,7 @@ jobs:
   # Backend Apply (runs on merge to master)
   deploy-backend:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: check-commit
     runs-on: ubuntu-latest
     environment: deploy-backend
     env:
@@ -164,7 +175,7 @@ jobs:
   # Infra Apply (runs on merge to master) - Usa bucket real criado pelo backend
   deploy-infra:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: deploy-backend
+    needs: [check-commit, deploy-backend]
     runs-on: ubuntu-latest
     environment: deploy-infra
     env:

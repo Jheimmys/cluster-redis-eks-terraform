@@ -3,6 +3,8 @@ name: Redis Cluster
 on:
   push:
     branches: [master]
+    paths:
+      - 'redis-cluster/**'    
 
 env:
   HELM_VERSION: "3.17.1"
@@ -10,8 +12,19 @@ env:
   NAMESPACE: "redis"
 
 jobs:
-  deploy:
+  check-commit:
     runs-on: ubuntu-latest
+    if: |
+      contains(github.event.head_commit.message, '#redis') ||
+      github.event_name == 'pull_request' ||
+      github.event_name == 'push'
+    steps:
+      - run: echo "Commit válido para execução do Redis Cluster workflow."
+
+  deploy:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '#redis')
+    runs-on: ubuntu-latest
+    needs: check-commit
     timeout-minutes: 45
 
     steps:
@@ -72,4 +85,3 @@ jobs:
       run: |
         helm rollback ${{ env.CLUSTER_NAME }} -n ${{ env.NAMESPACE }}
       continue-on-error: true
-      
