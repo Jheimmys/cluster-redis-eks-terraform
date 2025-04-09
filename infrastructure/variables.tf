@@ -57,7 +57,7 @@ variable "grafana_password" {
 }
 
 variable "grafana_user" {
-  description = "Grafana user"
+  description = "Grafana User"
   type        = string
   default     = "admin"
 }
