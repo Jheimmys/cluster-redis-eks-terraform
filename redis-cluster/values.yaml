@@ -7,7 +7,7 @@ existingSecretPasswordKey: "redis-password"
 
 cluster:
   enabled: true
-  nodes: 6  # Total nodes (3 masters + 3 replicas)
+  nodes: 4  # Total nodes (3 masters + 3 replicas)
   replicas: 1  # Number of replicas per master (1:1 replica/master ratio)
 
   # Persistence configuration (applies to all nodes)
