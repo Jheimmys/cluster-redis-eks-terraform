@@ -150,7 +150,7 @@ jobs:
         if ! aws s3api head-bucket --bucket tfstate-cluster-redis-jheimmys 2>/dev/null; then
           aws s3api create-bucket --bucket tfstate-cluster-redis-jheimmys --region ${{ secrets.AWS_REGION }}
         else
-          echo "Bucket já existe. Nenhuma ação necessária."
+          echo "Bucket existente. Nenhuma ação necessária."
         fi
 
     - name: Terraform Init
