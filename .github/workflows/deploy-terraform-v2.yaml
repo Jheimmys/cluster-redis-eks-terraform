@@ -21,7 +21,7 @@ jobs:
       (contains(github.event.pull_request.title, '#terraform') ||
        contains(github.event.pull_request.body, '#terraform'))
     steps:
-      - run: echo "Commit válido para execução do Terraform workflow."
+      - run: echo "Commit válido para execução do Terraform Workflow."
 
   # Backend Plan (runs on PR)
   backend-plan:
