@@ -106,7 +106,6 @@ jobs:
         aws s3api create-bucket \
           --bucket ${{ env.TF_STATE_BUCKET }} \
           --region ${{ secrets.AWS_REGION }} \
-          --create-bucket-configuration LocationConstraint="us-east-1"
 
     - name: Terraform Init
       working-directory: ${{ env.INFRA_DIR }}
