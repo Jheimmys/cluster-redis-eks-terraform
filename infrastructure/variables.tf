@@ -51,7 +51,7 @@ variable "redis_version" {
 
 #Grafana
 variable "grafana_password" {
-  description = "Grafana Secret"
+  description = "Grafana secret"
   type        = string
   default     = "testegrafana"
 }
