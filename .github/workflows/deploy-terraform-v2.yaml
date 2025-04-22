@@ -78,7 +78,7 @@ jobs:
     environment: terraform-plan
     env:
       INFRA_DIR: "./infrastructure"
-      TF_STATE_BUCKET: "temp-tfstate-${{ github.event.pull_request.number }}"
+      TF_STATE_BUCKET: "tfstate-cluster-redis-jheimmys"  # Ajustado para usar o bucket final
 
     steps:
     - uses: actions/checkout@v4
@@ -93,18 +93,12 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Ensure Bucket Exists
-      run: |
-        if ! aws s3api head-bucket --bucket ${{ env.TF_STATE_BUCKET }} 2>/dev/null; then
-          aws s3api create-bucket --bucket ${{ env.TF_STATE_BUCKET }} --region ${{ secrets.AWS_REGION }}
-        fi
-
     - name: Terraform Init
       working-directory: ${{ env.INFRA_DIR }}
       run: |
         terraform init \
           -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
-          -backend-config="key=infra/terraform.tfstate" \
+          -backend-config="key=cluster-redis/terraform.tfstate" \
           -backend-config="region=${{ secrets.AWS_REGION }}" \
           -backend-config="skip_credentials_validation=true" \
           -backend-config="skip_region_validation=true"
@@ -194,7 +188,7 @@ jobs:
 
     - name: Terraform Init (with real backend)
       working-directory: ${{ env.INFRA_DIR }}
-      run: terraform init -backend-config="bucket=${{ needs.deploy-backend.outputs.bucket_name }}"
+      run: terraform init -backend-config="bucket=${{ needs.deploy-backend.outputs.bucket_name }}"  # Agora usando o bucket final
 
     - name: Terraform Apply
       working-directory: ${{ env.INFRA_DIR }}
@@ -204,4 +198,4 @@ jobs:
       working-directory: ${{ env.INFRA_DIR }}
       run: |
         aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
-        kubectl get nodes  
+        kubectl get nodes
