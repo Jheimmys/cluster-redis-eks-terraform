@@ -44,14 +44,14 @@ variable "redis_password" {
 }
 
 variable "redis_version" {
-  description = "Cluster Redis version chart OCI"
+  description = "Cluster Redis Version Chart OCI"
   type        = string
   default     = "11.4.6"
 }
 
 #Grafana
 variable "grafana_password" {
-  description = "Grafana Secret"
+  description = "Grafana secret"
   type        = string
   default     = "testegrafana"
 }
