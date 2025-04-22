@@ -145,6 +145,14 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
+    - name: Ensure Backend Bucket Exists
+      run: |
+        if ! aws s3api head-bucket --bucket tfstate-cluster-redis-jheimmys 2>/dev/null; then
+          aws s3api create-bucket --bucket tfstate-cluster-redis-jheimmys --region ${{ secrets.AWS_REGION }}
+        else
+          echo "Bucket já existe. Nenhuma ação necessária."
+        fi
+
     - name: Terraform Init
       working-directory: ${{ env.BACKEND_DIR }}
       run: terraform init
