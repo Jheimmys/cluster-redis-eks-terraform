@@ -83,7 +83,7 @@ jobs:
     environment: terraform-plan
     env:
       INFRA_DIR: "./infrastructure"
-      TF_STATE_BUCKET: "temp-bucket-for-validation-jhei"
+      TF_STATE_BUCKET: "temp-tfstate-${{ github.event.pull_request.number }}-${{ github.run_id }}"
 
     steps:
     - name: Checkout Code
@@ -101,7 +101,14 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Terraform Init (Validation Mode)
+    - name: Create Temporary S3 Bucket
+      run: |
+        aws s3api create-bucket \
+          --bucket ${{ env.TF_STATE_BUCKET }} \
+          --region ${{ secrets.AWS_REGION }} \
+          --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}        
+
+    - name: Terraform Init
       working-directory: ${{ env.INFRA_DIR }}
       run: |
         terraform init \
@@ -130,6 +137,10 @@ jobs:
             repo: context.repo.repo,
             body: output
           });
+
+    - name: Cleanup Temporary Bucket  # Remove after use
+      if: always()
+      run: aws s3 rb s3://${{ env.TF_STATE_BUCKET }} --force
 
   # Backend Apply (runs on merge to master)
   deploy-backend:
