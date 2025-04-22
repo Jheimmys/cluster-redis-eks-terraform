@@ -20,6 +20,7 @@ provider "aws" {
       Environment = "dev"
       Owner       = "Jheimmys"
       Project     = "cluster-redis"
+      team        = "SRE"
     }
   }
 }
