@@ -128,8 +128,7 @@ jobs:
             echo "STATE_BUCKET=$TEMP_BUCKET" >> $GITHUB_ENV
             aws s3api create-bucket \
               --bucket "$TEMP_BUCKET" \
-              --region ${{ secrets.AWS_REGION }} \
-              --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}
+              --region ${{ secrets.AWS_REGION }}
           fi
 
       - name: Terraform Init (infra)
@@ -202,8 +201,7 @@ jobs:
           if [ "${BACKEND_EXISTS}" = "false" ]; then
             aws s3api create-bucket \
               --bucket "$BUCKET" \
-              --region ${{ secrets.AWS_REGION }} \
-              --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}
+              --region ${{ secrets.AWS_REGION }}
           else
             echo "Bucket já existia. Pulando criação."
           fi
