@@ -38,13 +38,13 @@ variable "flow_log_interval" {
 
 #Redis
 variable "redis_password" {
-  description = "Cluster redis secret"
+  description = "cluster redis secret"
   type        = string
   default     = "testeredis"
 }
 
 variable "redis_version" {
-  description = "Cluster redis version Chart OCI"
+  description = "Cluster Redis version Chart OCI"
   type        = string
   default     = "11.4.6"
 }
