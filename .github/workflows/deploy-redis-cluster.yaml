@@ -1,0 +1,87 @@
+name: Redis Cluster
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'redis-cluster/**'    
+
+env:
+  HELM_VERSION: "3.17.1"
+  CLUSTER_NAME: "redis-cluster"
+  NAMESPACE: "redis"
+
+jobs:
+  check-commit:
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.head_commit.message, '#redis') ||
+      github.event_name == 'pull_request' ||
+      github.event_name == 'push'
+    steps:
+      - run: echo "Commit válido para execução do Redis Cluster workflow."
+
+  deploy:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '#redis')
+    runs-on: ubuntu-latest
+    needs: check-commit
+    timeout-minutes: 45
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: ${{ env.HELM_VERSION }}
+
+    - name: Add Bitnami Helm Repo
+      run: helm repo add bitnami https://charts.bitnami.com/bitnami
+
+    - name: Update Helm Repositories
+      run: helm repo update  
+
+    - name: Configure EKS Access
+      run: |
+        aws eks update-kubeconfig \
+          --name ${{ secrets.EKS_CLUSTER_NAME }} \
+          --region ${{ secrets.AWS_REGION }}
+
+    - name: Validate Cluster State (Pre-Check)
+      working-directory: ./redis-cluster/scripts
+      run: |
+        chmod +x pre-upgrade-check.sh
+        ./pre-upgrade-check.sh "${{ secrets.REDIS_PASSWORD }}"
+
+    - name: Deploy/Update Redis Cluster
+      run: |
+        helm upgrade ${{ env.CLUSTER_NAME }} bitnami/redis-cluster \
+          --namespace ${{ env.NAMESPACE }} \
+          --install \
+          --version 11.4.3 \
+          -f ./redis-cluster/values.yaml \
+          --atomic \
+          --wait \
+          --timeout 45m \
+          --set existingSecret="redis-secret" \
+          --set existingSecretPasswordKey="redis-password"
+
+    - name: Validate Deployment (Post-Check)
+      working-directory: ./redis-cluster/scripts
+      run: |
+        chmod +x post-upgrade-check.sh
+        ./post-upgrade-check.sh "${{ secrets.REDIS_PASSWORD }}"
+
+    - name: Rollback on Failure
+      if: failure()
+      run: |
+        helm rollback ${{ env.CLUSTER_NAME }} -n ${{ env.NAMESPACE }}
+      continue-on-error: true

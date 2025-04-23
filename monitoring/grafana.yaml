@@ -1,0 +1,59 @@
+# Grafana Persistence
+persistence:
+  type: pvc
+  enabled: true
+  storageClassName: "gp2"
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+
+admin:
+  existingSecret: "grafana-secret"
+  userKey: admin
+  passwordKey: "grafana-password"
+
+
+# Security configuration
+securityContext:
+  runAsNonRoot: true
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# Resources
+resources:
+  limits:
+    memory: 2Gi
+    cpu: '100m'
+  requests:
+    memory: 1Gi
+    cpu: '100m'
+
+# Service Configuration
+service:
+  enabled: true
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+# Datasource Configuration
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-operated.monitoring.svc.cluster.local:9090
+      access: proxy
+      isDefault: true
+
+# Grafana Readiness Probe
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3      
