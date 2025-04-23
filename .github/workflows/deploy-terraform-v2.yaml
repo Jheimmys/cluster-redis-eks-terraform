@@ -190,8 +190,7 @@ jobs:
           if ! aws s3api head-bucket --bucket "$REAL_BUCKET" 2>/dev/null; then
             aws s3api create-bucket \
               --bucket "$REAL_BUCKET" \
-              --region ${{ secrets.AWS_REGION }} \
-              --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}
+              --region ${{ secrets.AWS_REGION }}
           else
             echo "Bucket existente. Nenhuma ação necessária."
           fi
