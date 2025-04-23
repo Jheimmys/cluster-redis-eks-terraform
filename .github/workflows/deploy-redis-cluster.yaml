@@ -15,9 +15,7 @@ jobs:
   check-commit:
     runs-on: ubuntu-latest
     if: |
-      contains(github.event.head_commit.message, '#redis') ||
-      github.event_name == 'pull_request' ||
-      github.event_name == 'push'
+      contains(github.event.head_commit.message, '#redis') || github.event_name == 'push'
     steps:
       - run: echo "Commit válido para execução do Redis Cluster workflow."
 
