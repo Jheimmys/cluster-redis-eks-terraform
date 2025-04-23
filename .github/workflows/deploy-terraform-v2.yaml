@@ -75,6 +75,17 @@ jobs:
             body: output
           });
 
+    - name: Get Bucket Name
+      id: get_bucket
+      working-directory: ${{ env.BACKEND_DIR }}
+      run: |
+        # Tenta obter o bucket do state (se existir)
+        BUCKET_NAME=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "")
+        echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+
+    outputs:
+      bucket_name: ${{ steps.get_bucket.outputs.bucket_name }}
+
   # Infra Plan (runs on PR) - Usa bucket temporário para validação
   infra-plan:
     if: github.event_name == 'pull_request'
@@ -83,7 +94,8 @@ jobs:
     environment: terraform-plan
     env:
       INFRA_DIR: "./infrastructure"
-      TF_STATE_BUCKET: "temp-tfstate-${{ github.event.pull_request.number }}-${{ github.run_id }}"
+      REAL_BUCKET: "tfstate-cluster-redis-jheimmys"
+      TEMP_BUCKET: "temp-tfstate-${{ github.event.pull_request.number }}"
 
     steps:
     - name: Checkout Code
@@ -101,19 +113,34 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
+    - name: Check if Real Bucket Exists
+      id: check_bucket
+      run: |
+        if aws s3api head-bucket --bucket "$REAL_BUCKET" 2>/dev/null; then
+          echo "bucket_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "bucket_exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Create Temporary S3 Bucket
+      if: steps.check_bucket.outputs.bucket_exists == 'false'
       run: |
         aws s3api create-bucket \
-          --bucket ${{ env.TF_STATE_BUCKET }} \
+          --bucket ${{ env.TEMP_BUCKET }} \
           --region ${{ secrets.AWS_REGION }} \
+
+    - name: Copy State if Exists
+      if: steps.check_bucket.outputs.bucket_exists == 'true'
+      run: |
+        aws s3 cp s3://$REAL_BUCKET/cluster-redis s3://${{ env.TEMP_BUCKET }}/cluster-redis || echo "No state to copy
 
     - name: Terraform Init
       working-directory: ${{ env.INFRA_DIR }}
       run: |
         terraform init \
-          -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
-          -backend-config="skip_credentials_validation=true" \
-          -backend-config="skip_region_validation=true"
+          -backend-config="bucket=${{ steps.check_bucket.outputs.bucket_exists == 'true' && env.REAL_BUCKET || env.TEMP_BUCKET }}" \
+          -backend-config="key=cluster-redis" \
+          -backend-config="region=${{ secrets.AWS_REGION }}"
 
     - name: Terraform Plan
       working-directory: ${{ env.INFRA_DIR }}
@@ -137,9 +164,9 @@ jobs:
             body: output
           });
 
-    - name: Cleanup Temporary Bucket  # Remove after use
-      if: always()
-      run: aws s3 rb s3://${{ env.TF_STATE_BUCKET }} --force
+    - name: Cleanup Temporary Bucket
+      if: always() && steps.check_bucket.outputs.bucket_exists == 'false'
+      run: aws s3 rb s3://${{ env.TEMP_BUCKET }} --force
 
   # Backend Apply (runs on merge to master)
   deploy-backend:
