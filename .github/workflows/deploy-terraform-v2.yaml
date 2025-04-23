@@ -93,7 +93,7 @@ jobs:
               body: output
             });
 
-  # 2. INFRA PLAN (runs on PR)
+   # 2. INFRA PLAN (runs on PR)
   infra-plan:
     if: github.event_name == 'pull_request'
     needs: [check-commit, backend-plan]
@@ -101,6 +101,7 @@ jobs:
     environment: terraform-plan
     env:
       INFRA_DIR: "./infrastructure"
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -127,7 +128,8 @@ jobs:
             echo "STATE_BUCKET=$TEMP_BUCKET" >> $GITHUB_ENV
             aws s3api create-bucket \
               --bucket "$TEMP_BUCKET" \
-              --region ${{ secrets.AWS_REGION }}
+              --region ${{ secrets.AWS_REGION }} \
+              --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}
           fi
 
       - name: Terraform Init (infra)
