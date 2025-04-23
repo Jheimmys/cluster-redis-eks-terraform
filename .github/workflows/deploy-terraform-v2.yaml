@@ -93,7 +93,7 @@ jobs:
               body: output
             });
 
-  # 2. INFRA PLAN (runs on PR)
+   # 2. INFRA PLAN (runs on PR)
   infra-plan:
     if: github.event_name == 'pull_request'
     needs: [check-commit, backend-plan]
@@ -101,6 +101,7 @@ jobs:
     environment: terraform-plan
     env:
       INFRA_DIR: "./infrastructure"
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -200,8 +201,7 @@ jobs:
           if [ "${BACKEND_EXISTS}" = "false" ]; then
             aws s3api create-bucket \
               --bucket "$BUCKET" \
-              --region ${{ secrets.AWS_REGION }} \
-              --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}
+              --region ${{ secrets.AWS_REGION }}
           else
             echo "Bucket já existia. Pulando criação."
           fi
