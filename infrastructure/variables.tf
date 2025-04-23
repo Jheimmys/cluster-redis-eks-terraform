@@ -44,7 +44,7 @@ variable "redis_password" {
 }
 
 variable "redis_version" {
-  description = "Cluster Redis version Chart OCI"
+  description = "cluster Redis version Chart OCI"
   type        = string
   default     = "11.4.6"
 }
